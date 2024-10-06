@@ -2,30 +2,92 @@ import { sendEvent } from './Socket.js';
 
 class Score {
   score = 0;
+  scoreIncrement = 0;
   HIGH_SCORE_KEY = 'highScore';
-  stageChange = true;
+  stageChanged = {};
+  currentStage = 9999;
 
-  constructor(ctx, scaleRatio) {
+  constructor(ctx, scaleRatio, stageData, itemTable, itemController) {
     this.ctx = ctx;
     this.canvas = ctx.canvas;
     this.scaleRatio = scaleRatio;
+    this.stageData = stageData;
+    this.itemTable = itemTable;
+    this.itemController = itemController;
+
+    // 초기화
+    this.stageData.forEach((stage) => {
+      this.stageChanged[stage.id] = false;
+    })
   }
 
   update(deltaTime) {
-    this.score += deltaTime * 0.001;
-    if (Math.floor(this.score) === 100 && this.stageChange) {
-      this.stageChange = false;
-      sendEvent(11, { currentStage: 1000, targetStage: 1001 });
+    // 현재 스테이지 정보 가져오기
+    const currentStageInfo = this.stageData.find((stage) => stage.id === this.currentStage);
+    // 초당 점수 증가량
+    const scorePerSecond = currentStageInfo ? currentStageInfo.scorePerSecond : 1;
+    this.scoreIncrement += deltaTime * 0.001 * scorePerSecond;
+
+    // 증가분이 scorePerSecond 만큼 쌓이면 score에 반영하고 초기화
+    if (this.scoreIncrement >= scorePerSecond) {
+      this.score += scorePerSecond;
+      this.scoreIncrement -= scorePerSecond;
+    }
+
+    this.isStageChange();
+  }
+
+  isStageChange() {
+    for (let i = 0; i < this.stageData.length; i++) {
+      const stage = this.stageData[i];
+
+      // 현재 점수가 스테이지 점수 이상이고, 해당 스테이지로 변경된 적이 없는 경우
+      if (
+        Math.floor(this.score) >= stage.score &&
+        !this.stageChanged[stage.id] &&
+        stage.id !== 1000
+      ) {
+        const previousStage = this.currentStage;
+        this.currentStage = stage.id;
+
+        // 해당 스테이지로 변경됨을 표시
+        this.stageChanged[stage.id] = true;
+
+        // 서버로 이벤트 전송
+        sendEvent(11, { currentStage: previousStage, targetStage: this.currentStage });
+
+        // 아이템 컨트롤러에 현재 스테이지 설정
+        if (this.itemController) {
+          this.itemController.setCurrentStage(this.currentStage);
+        }
+
+        // 스테이지 변경 후 반복문 종료
+        break;
+      }
     }
   }
 
   getItem(itemId) {
     // 아이템 획득시 점수 변화
-    this.score += 0;
+    const item = this.itemTable.find((item) => item.id === itemId);
+    if (item) {
+      this.score += item.score;
+      sendEvent(21, { itemId, timestamp: Date.now() });
+    }
   }
 
   reset() {
     this.score = 0;
+    this.scoreIncrement = 0;
+    this.currentStage = 1000;
+
+    Object.keys(this.stageChanged).forEach((key) => {
+      this.stageChanged[key] = false;
+    });
+
+    if (this.itemController) {
+      this.itemController.setCurrentStage(this.currentStage);
+    }
   }
 
   setHighScore() {

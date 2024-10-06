@@ -9,13 +9,14 @@ class ItemController {
     items = [];
 
 
-    constructor(ctx, itemImages, scaleRatio, speed) {
+    constructor(ctx, itemImages, scaleRatio, speed, itemUnlock) {
         this.ctx = ctx;
         this.canvas = ctx.canvas;
         this.itemImages = itemImages;
         this.scaleRatio = scaleRatio;
         this.speed = speed;
-
+        this.itemUnlock = itemUnlock;
+        this.currentStage = 9999;
         this.setNextItemTime();
     }
 
@@ -26,35 +27,44 @@ class ItemController {
         );
     }
 
+    // 현재 스테이지 설정
+    setCurrentStage(stageId) {
+        this.currentStage = stageId;
+    }
+
     getRandomNumber(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
     createItem() {
-        const index = this.getRandomNumber(0, this.itemImages.length - 1);
-        const itemInfo = this.itemImages[index];
-        const x = this.canvas.width * 1.5;
-        const y = this.getRandomNumber(
-            10,
-            this.canvas.height - itemInfo.height
-        );
+        const stageItems = this.itemUnlock.find((stage) => stage.stage_id === this.currentStage,).item_id;
+        if (stageItems) {
+            const availableItems = this.itemImages.filter((item) => stageItems.includes(item.id));
+            const index = this.getRandomNumber(0, availableItems.length - 1);
+            const itemInfo = availableItems[index];
+            const x = this.canvas.width * 1.5;
+            const y = this.getRandomNumber(
+                10,
+                this.canvas.height - itemInfo.height
+            );
 
-        const item = new Item(
-            this.ctx,
-            itemInfo.id,
-            x,
-            y,
-            itemInfo.width,
-            itemInfo.height,
-            itemInfo.image
-        );
+            const item = new Item(
+                this.ctx,
+                itemInfo.id,
+                x,
+                y,
+                itemInfo.width,
+                itemInfo.height,
+                itemInfo.image
+            );
 
-        this.items.push(item);
+            this.items.push(item);
+        }
     }
 
 
     update(gameSpeed, deltaTime) {
-        if(this.nextInterval <= 0) {
+        if (this.nextInterval <= 0) {
             this.createItem();
             this.setNextItemTime();
         }

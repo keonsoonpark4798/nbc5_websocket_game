@@ -1,5 +1,7 @@
 import { getStage, setStage } from '../models/stage.model.js';
 import { getGameAssets } from '../init/assets.js';
+import calculateTotalScore from '../utils/calculateTotalScore.js';
+import { getUserItems } from '../models/item.model.js';
 
 export const moveStageHandler = (userId, payload) => {
   // 유저의 현재 스테이지 배열을 가져오고, 최대 스테이지 ID를 찾는다.
@@ -17,21 +19,27 @@ export const moveStageHandler = (userId, payload) => {
     return { status: 'fail', message: 'Current stage mismatch' };
   }
 
-  // 점수 검증
-  const serverTime = Date.now();
-  const elapsedTime = (serverTime - currentStage.timestamp) / 1000; // 초 단위로 계산
+  // 게임 에셋에서 스테이지 정보 가져오기
+  const { stages } = getGameAssets();
 
-  // 1초당 1점, 100점이상 다음스테이지 이동, 오차범위 5
-  // 클라이언트와 서버 간의 통신 지연시간을 고려해서 오차범위 설정
-  // elapsedTime 은 100 이상 105 이하 일 경우만 통과
-  if (elapsedTime < 100 || elapsedTime > 105) {
-    return { status: 'fail', message: 'Invalid elapsed time' };
+  // 현재 스테이지의 정보를 stageTable 에서 가져옴
+  const currentStageInfo = stages.data.find((stage) => stage.id === payload.currentStage);
+  if (!currentStageInfo) {
+    return { status: 'fail', message: 'Current stage info not found' };
   }
 
-  // 게임 에셋에서 다음 스테이지의 존재 여부 확인
-  const { stages } = getGameAssets();
-  if (!stages.data.some((stage) => stage.id === payload.targetStage)) {
-    return { status: 'fail', message: 'Target stage does not exist' };
+  // 목표 스테이지의 정보를 stageTable 에서 가져옴
+  const targetStageInfo = stages.data.find((stage) => stage.id === payload.targetStage);
+  if (!targetStageInfo) {
+    return { status: 'fail', message: 'Target stage info not found' };
+  }
+  // 점수 검증
+  const serverTime = Date.now();
+  const userItems = getUserItems(userId);
+  const totalScore = calculateTotalScore(currentStages, serverTime, true, userItems);
+
+  if (targetStageInfo.score > totalScore) {
+    return { status: 'fail', message: 'Invalid elapsed time' };
   }
 
   // 유저의 다음 스테이지 정보 업데이트 + 현재 시간

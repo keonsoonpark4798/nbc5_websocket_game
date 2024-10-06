@@ -1,5 +1,4 @@
 import { sendEvent } from './Socket.js';
-import { loadGameAssets } from '../src/init/assets.js';
 
 class Score {
   score = 0;
@@ -14,24 +13,15 @@ class Score {
 
   update(deltaTime) {
     this.score += deltaTime * 0.001;
-    // 점수가 100점 이상이 될 시 서버에 메세지 전송
     if (Math.floor(this.score) === 100 && this.stageChange) {
       this.stageChange = false;
       sendEvent(11, { currentStage: 1000, targetStage: 1001 });
     }
   }
 
-  // 아이템에 따라 차등으로 스코어 지급
   getItem(itemId) {
-    switch (itemId) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-    }
-    this.score += 10;
+    // 아이템 획득시 점수 변화
+    this.score += 0;
   }
 
   reset() {

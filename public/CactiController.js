@@ -50,7 +50,7 @@ class CactiController {
 
 
     update(gameSpeed, deltaTime) {
-        if (this.nextCactusInterval <= 0) {
+        if(this.nextCactusInterval <= 0) {
             // 선인장 생성
             this.createCactus();
             this.setNextCactusTime();

@@ -54,7 +54,7 @@ class ItemController {
 
 
     update(gameSpeed, deltaTime) {
-        if (this.nextInterval <= 0) {
+        if(this.nextInterval <= 0) {
             this.createItem();
             this.setNextItemTime();
         }

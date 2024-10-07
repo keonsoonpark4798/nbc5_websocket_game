@@ -2,13 +2,13 @@ import Player from './Player.js';
 import Ground from './Ground.js';
 import CactiController from './CactiController.js';
 import Score from './Score.js';
+import Stage from './Stage.js';
 import ItemController from './ItemController.js';
 import './Socket.js';
 import { sendEvent } from './Socket.js';
 import ItemUnlockData from './assets/item_unlock.json' with { type: 'json' };
 import ItemData from './assets/item.json' with { type: 'json' };
 import StageData from './assets/stage.json' with { type: 'json' };
-
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
@@ -47,6 +47,7 @@ let ground = null;
 let cactiController = null;
 let itemController = null;
 let score = null;
+let stage = null;
 
 let scaleRatio = null;
 let previousTime = null;
@@ -77,7 +78,7 @@ function createSprites() {
   );
 
   ground = new Ground(ctx, groundWidthInGame, groundHeightInGame, GROUND_SPEED, scaleRatio);
-
+  stage = new Stage(ctx, scaleRatio);
   const cactiImages = CACTI_CONFIG.map((cactus) => {
     const image = new Image();
     image.src = cactus.image;
@@ -103,7 +104,7 @@ function createSprites() {
 
   itemController = new ItemController(ctx, itemImages, scaleRatio, GROUND_SPEED, ItemUnlockData.data,);
 
-  score = new Score(ctx, scaleRatio, StageData.data, ITEM_CONFIG, itemController);
+  score = new Score(ctx, scaleRatio, StageData.data, ITEM_CONFIG, itemController, stage);
 }
 
 function getScaleRatio() {
@@ -227,6 +228,7 @@ function gameLoop(currentTime) {
   ground.draw();
   score.draw();
   itemController.draw();
+  stage.draw();
 
   if (gameover) {
     showGameOver();

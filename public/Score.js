@@ -4,16 +4,17 @@ class Score {
   score = 0;
   scoreIncrement = 0;
   HIGH_SCORE_KEY = 'highScore';
-  stageChanged = {};
-  currentStage = 9999;
+  stageChanged = {}; // 스테이지 클리어한 기록
+  currentStage = 1000;
 
-  constructor(ctx, scaleRatio, stageData, itemTable, itemController) {
+  constructor(ctx, scaleRatio, stageData, itemTable, itemController, stage) {
     this.ctx = ctx;
     this.canvas = ctx.canvas;
     this.scaleRatio = scaleRatio;
     this.stageData = stageData;
     this.itemTable = itemTable;
     this.itemController = itemController;
+    this.stage = stage;
 
     // 초기화
     this.stageData.forEach((stage) => {
@@ -24,11 +25,12 @@ class Score {
   update(deltaTime) {
     // 현재 스테이지 정보 가져오기
     const currentStageInfo = this.stageData.find((stage) => stage.id === this.currentStage);
-    // 초당 점수 증가량
+    // 초당 점수 증가량 -> 스테이지 마다 다른 점수로 변경
     const scorePerSecond = currentStageInfo ? currentStageInfo.scorePerSecond : 1;
     this.scoreIncrement += deltaTime * 0.001 * scorePerSecond;
 
-    // 증가분이 scorePerSecond 만큼 쌓이면 score에 반영하고 초기화
+    // 그냥 스코어에 더해버리면 시각적으로 증가하는 폭이 1씩 올라가기 때문에 증가분으로 반영
+    // 증가분이 scorePerSecond 만큼 쌓이면 score에 반영하고 초기화 => 버퍼
     if (this.scoreIncrement >= scorePerSecond) {
       this.score += scorePerSecond;
       this.scoreIncrement -= scorePerSecond;
@@ -61,6 +63,11 @@ class Score {
           this.itemController.setCurrentStage(this.currentStage);
         }
 
+        // 현재 스테이지 설정
+        if (this.stage) {
+          this.stage.setCurrentStage(this.currentStage);
+        }
+
         // 스테이지 변경 후 반복문 종료
         break;
       }
@@ -87,6 +94,9 @@ class Score {
 
     if (this.itemController) {
       this.itemController.setCurrentStage(this.currentStage);
+    }
+    if (this.stage) {
+      this.stage.setCurrentStage(this.currentStage);
     }
   }
 
